@@ -11,3 +11,20 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum LogLevel {
+  INFO
+  ERROR
+  WARN
+}
+
+model Logs {
+  id        Int      @unique @default(autoincrement())
+  timestamp DateTime
+  level     LogLevel
+  userID    Int
+  ipAddress String
+  method    String
+  endpoint  String
+  message   String
+}
