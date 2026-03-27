@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
+import { Prisma, LogLevel } from 'generated/prisma/client';
 import { prisma } from 'lib/prisma';
-import { log } from 'node:console';
-import { skip } from 'node:test';
 
 export const searchLogs = async (
   req: Request,
@@ -9,7 +8,7 @@ export const searchLogs = async (
   next: NextFunction,
 ) => {
   try {
-    const { id } = req.query;
+    const { id, level, datetime, userID } = req.query;
 
     // let logs;
 
@@ -28,15 +27,7 @@ export const searchLogs = async (
     //   });
     // }
 
-    interface Cursor {
-      id: number;
-    }
-
-    interface QueryOptions {
-      take: number;
-      cursor?: Cursor;
-      skip?: number;
-    }
+    interface QueryOptions extends Prisma.LogsFindManyArgs {}
 
     const queryOptions: QueryOptions = {
       take: 51,
@@ -45,6 +36,24 @@ export const searchLogs = async (
     if (id) {
       queryOptions.cursor = { id: parseInt(id.toString()) };
       queryOptions.skip = 1;
+    }
+
+    if (userID) {
+      queryOptions.where = {
+        userID: parseInt(userID?.toString()),
+      };
+    }
+
+    if (
+      Object.values(LogLevel).includes(
+        level?.toString().toUpperCase() as LogLevel,
+      )
+    ) {
+      const search: LogLevel = level?.toString().toUpperCase() as LogLevel;
+
+      queryOptions.where = {
+        level: search,
+      };
     }
 
     const logs = await prisma?.logs.findMany(queryOptions);
@@ -68,6 +77,7 @@ export const searchLogs = async (
       });
     }
   } catch (error) {
+    console.log(error);
     res.status(500).send({
       errorMessage: 'Internal Server Error',
     });
