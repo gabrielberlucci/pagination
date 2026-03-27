@@ -8,7 +8,8 @@ import {
   User,
   RotateCcw,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export const HomePage = () => {
   interface FilterData {
@@ -20,29 +21,12 @@ export const HomePage = () => {
   interface TableData {
     timestamp: string;
     level: string;
-    userID: string; // probably a UUID
+    userID: string;
     ipAddress: string;
     method: string;
     endpoint: string;
     message: string;
   }
-
-  const initMockedData = () => {
-    const data = [];
-    for (let i = 1; i < 11; i++) {
-      data.push({
-        timestamp: `${i}/01/2026:14:0${i}:1${i}`,
-        level: 'LOG',
-        userID: i.toString(),
-        ipAddress: `192.168.0.${i}`,
-        method: 'GET',
-        endpoint: `/api/users/${i}`,
-        message: `GET /api/users/${i} - STATUS 200 OK`,
-      });
-    }
-
-    return data;
-  };
 
   const [filterData, setFilterData] = useState<FilterData>({
     level: 'ALL LEVELS',
@@ -50,8 +34,38 @@ export const HomePage = () => {
     userID: '',
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [tableData, setTableData] = useState<TableData[]>(initMockedData());
+  const [tableData, setTableData] = useState<TableData[]>([]);
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const res = await axios.get('http://localhost:3000/api/logs');
+        const data = res.data.logsMessage;
+
+        setTableData(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    loadInitialData();
+  }, []);
+
+  // const initMockedData = () => {
+  //   const data = [];
+  //   for (let i = 1; i < 11; i++) {
+  //     data.push({
+  //       timestamp: `${i}/01/2026:14:0${i}:1${i}`,
+  //       level: 'LOG',
+  //       userID: i.toString(),
+  //       ipAddress: `192.168.0.${i}`,
+  //       method: 'GET',
+  //       endpoint: `/api/users/${i}`,
+  //       message: `GET /api/users/${i} - STATUS 200 OK`,
+  //     });
+  //   }
+
+  //   return data;
+  // };
 
   const resetFilters = () => {
     setFilterData({ ...filterData, level: '', dateTime: '', userID: '' });
@@ -62,8 +76,8 @@ export const HomePage = () => {
       <input id="my-drawer-3" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content flex flex-col items-center justify-center">
         {/* Page content here */}
-        <div className="flex gap-8">
-          <div>
+        <div className="flex gap-8 p-6">
+          <div className="p-6">
             <h2 className="text-2xl">Active Log Streams</h2>
             <p>Real-time monitoring of system events across clusters.</p>
           </div>
@@ -162,7 +176,7 @@ export const HomePage = () => {
             <tbody>
               {tableData.map((data) => {
                 return (
-                  <tr>
+                  <tr key={data.userID}>
                     <th>{data.timestamp}</th>
                     <th>{data.level}</th>
                     <th>{data.userID}</th>
