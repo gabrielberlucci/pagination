@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { prisma } from 'lib/prisma';
 import { log } from 'node:console';
+import { skip } from 'node:test';
 
 export const searchLogs = async (
   req: Request,
@@ -10,32 +11,54 @@ export const searchLogs = async (
   try {
     const { id } = req.query;
 
-    if (!id) {
-      return res.status(500).send({
-        errorMessage: 'Please, provide a query string',
-      });
+    // let logs;
+
+    // if (!id) {
+    //   logs = await prisma?.logs.findMany({
+    //     take: 51,
+    //   });
+    // } else {
+    //   const idINT = parseInt(id!.toString());
+    //   logs = await prisma?.logs.findMany({
+    //     skip: 1,
+    //     take: 51,
+    //     cursor: {
+    //       id: idINT,
+    //     },
+    //   });
+    // }
+
+    interface Cursor {
+      id: number;
     }
 
-    const idINT = parseInt(id.toString());
+    interface QueryOptions {
+      take: number;
+      cursor?: Cursor;
+      skip?: number;
+    }
 
-    const logs = await prisma?.logs.findMany({
-      skip: 1,
-      take: 50 + 1,
-      cursor: {
-        id: idINT,
-      },
-    });
+    const queryOptions: QueryOptions = {
+      take: 51,
+    };
+
+    if (id) {
+      queryOptions.cursor = { id: parseInt(id.toString()) };
+      queryOptions.skip = 1;
+    }
+
+    const logs = await prisma?.logs.findMany(queryOptions);
 
     if (!logs) {
       return res.status(404).send({
-        message: 'Logs not founded',
+        message: 'Logs not found',
       });
     }
 
     if (logs?.length === 51) {
       logs.pop();
       res.status(200).send({
-        cursor: logs.at(-1)?.id,
+        lastCursor: logs.at(-1)?.id,
         logsMessage: logs,
       });
     } else {
@@ -45,6 +68,8 @@ export const searchLogs = async (
       });
     }
   } catch (error) {
-    console.log(error);
+    res.status(500).send({
+      errorMessage: 'Internal Server Error',
+    });
   }
 };
