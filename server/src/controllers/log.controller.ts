@@ -73,3 +73,25 @@ export const searchLogs = async (
     });
   }
 };
+
+export const countRows = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const totalCount = await prisma?.logs.count();
+
+    if (!totalCount) {
+      return res.status(404).send({
+        errorMessage: 'Not found',
+      });
+    }
+
+    res.status(200).send({
+      totalPages: totalCount! / 50,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
