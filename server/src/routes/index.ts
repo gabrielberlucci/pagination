@@ -1,6 +1,8 @@
 import { Router } from 'express';
-import { searchLogs } from '@/controllers/log.controller';
+import { logsRouter } from './log.routes';
 
-export const routes: Router = Router();
+const routes: Router = Router();
 
-routes.use('/api/logs', searchLogs);
+routes.use('/api/logs', logsRouter);
+
+export { routes };
