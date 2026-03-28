@@ -8,77 +8,53 @@ export const searchLogs = async (
   next: NextFunction,
 ) => {
   try {
-    const { id, level, datetime, userID } = req.query;
+    const { id, level, userID } = req.query;
 
-    // let logs;
-
-    // if (!id) {
-    //   logs = await prisma?.logs.findMany({
-    //     take: 51,
-    //   });
-    // } else {
-    //   const idINT = parseInt(id!.toString());
-    //   logs = await prisma?.logs.findMany({
-    //     skip: 1,
-    //     take: 51,
-    //     cursor: {
-    //       id: idINT,
-    //     },
-    //   });
-    // }
-
-    interface QueryOptions extends Prisma.LogsFindManyArgs {}
-
-    const queryOptions: QueryOptions = {
+    const queryOptions: Prisma.LogsFindManyArgs = {
       take: 51,
+      where: {},
     };
 
     if (id) {
-      queryOptions.cursor = { id: parseInt(id.toString()) };
+      queryOptions.cursor = { id: parseInt(String(id), 10) };
       queryOptions.skip = 1;
     }
 
     if (userID) {
-      queryOptions.where = {
-        userID: parseInt(userID?.toString()),
-      };
+      queryOptions.where!.userID = parseInt(String(userID), 10);
     }
 
-    if (
-      Object.values(LogLevel).includes(
-        level?.toString().toUpperCase() as LogLevel,
-      )
-    ) {
-      const search: LogLevel = level?.toString().toUpperCase() as LogLevel;
+    if (level) {
+      const search = String(level).toUpperCase() as LogLevel;
 
-      queryOptions.where = {
-        level: search,
-      };
+      if (Object.values(LogLevel).includes(search)) {
+        queryOptions.where!.level = search;
+      }
     }
 
-    const logs = await prisma?.logs.findMany(queryOptions);
+    const logs = await prisma.logs.findMany(queryOptions);
 
-    if (!logs) {
+    if (logs.length === 0) {
       return res.status(404).send({
         message: 'Logs not found',
       });
     }
 
-    if (logs?.length === 51) {
+    if (logs.length === 51) {
       logs.pop();
-      res.status(200).send({
+      return res.status(200).send({
         lastCursor: logs.at(-1)?.id,
         logsMessage: logs,
       });
-    } else {
-      res.status(200).send({
-        endOfCursor: true,
-        logsMessage: logs,
-      });
     }
+
+    return res.status(200).send({
+      endOfCursor: true,
+      logsMessage: logs,
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
+    console.error('[searchLogs Error]:', error);
+    return res.status(500).send({
       errorMessage: 'Internal Server Error',
     });
   }
