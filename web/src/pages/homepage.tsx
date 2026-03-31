@@ -7,6 +7,8 @@ import {
   Activity,
   User,
   RotateCcw,
+  MoveRight,
+  MoveLeft,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -35,14 +37,20 @@ export const HomePage = () => {
   });
 
   const [tableData, setTableData] = useState<TableData[]>([]);
-
+  const [currentCursor, setCurrentCursor] = useState<number | undefined>(
+    undefined,
+  );
+  const [nextCursor, setNextCursor] = useState<number>();
+  const [history, setHistory] = useState<(number | undefined)[]>([]);
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         const res = await axios.get('http://localhost:3000/api/logs');
         const data = res.data.logsMessage;
+        const lastCursor = res.data.lastCursor;
 
         setTableData(data);
+        setNextCursor(lastCursor);
       } catch (error) {
         console.log(error);
       }
@@ -69,6 +77,43 @@ export const HomePage = () => {
 
   const resetFilters = () => {
     setFilterData({ ...filterData, level: '', dateTime: '', userID: '' });
+  };
+
+  const handleNext = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/api/logs', {
+        params: { id: nextCursor },
+      });
+      const data = res.data.logsMessage;
+      const lastCursor = res.data.lastCursor;
+
+      setTableData(data);
+      setHistory([...history, currentCursor]);
+      setCurrentCursor(nextCursor);
+      setNextCursor(lastCursor);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleBack = async () => {
+    try {
+      const historyCopy = [...history];
+      const previousCursor = historyCopy.pop();
+
+      const res = await axios.get('http://localhost:3000/api/logs', {
+        params: { id: previousCursor },
+      });
+      const data = res.data.logsMessage;
+      const lastCursor = res.data.lastCursor;
+
+      setTableData(data);
+      setHistory(historyCopy);
+      setCurrentCursor(previousCursor);
+      setNextCursor(lastCursor);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -190,11 +235,15 @@ export const HomePage = () => {
             </tbody>
           </table>
         </div>
-        <div className="join">
-          <button className="join-item btn btn-active">1</button>
-          <button className="join-item btn ">2</button>
-          <button className="join-item btn">3</button>
-          <button className="join-item btn">4</button>
+        <div>
+          <button className="btn" onClick={handleBack}>
+            <MoveLeft />
+            Back
+          </button>
+          <button className="btn" onClick={handleNext}>
+            Next
+            <MoveRight />
+          </button>
         </div>
         <label htmlFor="my-drawer-3" className="btn drawer-button lg:hidden">
           Open drawer
