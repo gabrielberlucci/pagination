@@ -15,10 +15,8 @@ O ecossistema do projeto foi escolhido focando em performance, tipagem estrita e
 
 ## Arquitetura do Projeto
 
-O código foi desenhado visando escalabilidade e separação de responsabilidades. A estrutura principal é dividida para isolar a camada de infraestrutura/servidor da camada de regras de negócio/web:
-
-- `/server`: Configurações de inicialização, conexão com o banco (Prisma Client) e instâncias do Express.
-- `/web`: Controladores, serviços, rotas e regras de negócio da aplicação.
+- `/server`: Back-end.
+- `/web`: Front-end.
 
 ## Como Rodar Localmente
 
